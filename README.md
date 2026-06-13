@@ -1,23 +1,10 @@
-<h1 align="center">
-  <br>
-  <a href="https://github.com/naomisphere/bengal"><img src="https://github.com/user-attachments/assets/5c678d35-43af-4e3b-8395-34f5bd5afb58" alt="bengal" width="150"></a>
-  <br>
-  bengal
-  <br>
-</h1>
+# mkauth
+**mkauth** is a command-line utility for tinkering with macOS's system authorization database. It allows you to modify the `system.login.console` right and its mechanisms (plugins, MFA, or directory services) that execute during the login process.
 
-<p align="center">
-  <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-red.svg?logo=swift" alt="license" />
-  </a>
-</p>
+ It is intended to be as customizable as possible, letting you customize login behavior and inject your own logic without being locked into specific third-party frameworks or vendor-specific deployment screens.
 
-**bengal** is a utility for tinkering with macOS's system authorization database. It allows you to modify the `system.login.console` right and its mechanisms (plugins, MFA, or directory services) that execute during the login process.
-
- It is intended for general use and developer freedom, allowing you to customize login behavior and inject your own logic without being locked into specific third-party frameworks or vendor-specific deployment screens.
-
-## What it does
-Put simple: your own login process, from scratch. Feed your own login flow, and your own UI.
+## TL;DR
+Put simple: your own authentication/login process, from scratch. Feed your own login flow, and your own UI.
 You may add your own logic before the UI, during auth, or after the user logs in.
 
 ## Building
@@ -39,7 +26,7 @@ To build an authorization bundle:
 AUTHBUNDLE=/path/to/AuthorizationBundle make authbundle
 ```
 
-If the bundle uses bengal's app settings, provide that path with `APP_CORE`:
+If the bundle uses mkauth's app settings, provide that path with `APP_CORE`:
 
 ```bash
 AUTHBUNDLE=/path/to/AuthorizationBundle APP_CORE=/path/to/app_core make authbundle
@@ -51,42 +38,47 @@ The bundle must contain:
 * `core/AuthorizationPlugin.swift`
 * `core/Mechanism.swift`
 
-If using `APP_CORE`, that path mandatorily must contain:
+If using `APP_CORE`, that path must mandatorily contain:
 * `SettingsManager.swift`
 
 ## CLI Guide
 
 Some commands require `sudo` as you're working with system databases here. \
-You may always use ```bengal help``` for help.
+You may always use ```mkauth help``` for help.
 
 ### Basics
-* `bengal -print`: show current mechanisms for `system.login.console`.
-* `bengal -reset`: revert the login screen to default.
-* `bengal -bengal`: apply bengal login UI.
-* `bengal -version`: print version.
+* `mkauth --print`: show current mechanisms for `system.login.console`.
+* `mkauth --reset`: revert the login screen to default.
+* `mkauth --apply`: apply the login mechanism configured by your authbundle.
+* `mkauth --create-privileged`: use alongside ``--apply`` to give mechanism has elevated privileges.
+* `mkauth --version`: print version.
 
 ### Customizing the Flow
 You can stack mechanisms at specific stages of the authentication chain:
-* `-preLogin`: runs before the login UI appears.
-* `-preAuth`: runs between the UI and the primary authentication check.
-* `-postAuth`: runs after the system confirms the user's credentials.
+* `--prelogin`: runs before the login UI appears.
+* `--preauth`: runs between the UI and the primary authentication check.
+* `--postauth`: runs after the system confirms the user's credentials.
 
 **Examples:**
 ```bash
-sudo bengal -bengal
+sudo mkauth --apply "myLoginMech:login"
 ```
-^ apply login UI (```BengalLogin:UI```)
+^ ``apply`` login mechanism. The authorization bundle will have to pick up on it (see submod examples/AuthorizationBundle/core/Mechanism.swift)
+
 ```bash
-sudo bengal -bengal -preLogin CustomMech:Something -postAuth PostLogin:Setup
+sudo mkauth --apply "mkauth:ui" --create-privileged --prelogin CustomMech:Something --postauth PostLogin:Setup
 ```
 translates to:
 ```
 Entry: system.login.console
+   tries : 10000
    mechanisms:
-      builtin:prelogin
-      CustomMech:Something     <-- prelogin
       builtin:policy-banner
-      BengalLogin:UI    <-- bengal (replacing loginwindow:login)
+      CustomMech:Something <-- custom prelogin mechanism
+      builtin:prelogin
+      mkauth:ui <-- custom login mech (replacing loginwindow:login)
+      mkauth:PowerControl,privileged <-- our privileged rights
+      mkauth:CreateUser,privileged
       builtin:login-begin
       builtin:reset-password,privileged
       loginwindow:FDESupport,privileged
@@ -101,13 +93,13 @@ Entry: system.login.console
       MCXMechanism:login
       CryptoTokenKit:login
       loginwindow:done
-      PostLogin:Setup   <-- postauth
-   tries : 10000
-   shared : 1
+      PostLogin:Setup <-- post-auth mechanism
    comment : Login mechanism based rule.  Not for general use, yet.
-   class : evaluate-mechanisms
+   external:mkauth:ui|mkauth:PowerControl,privileged|mkauth:CreateUser,privileged
    version : 11
+   shared : 1
+   class : evaluate-mechanisms
 ```
 
 ## Acknowledgements
-bengal's functionality is derived from [`authchanger`](https://github.com/jamf/authchanger) v2.1.0 ([MIT License](./LICENSE)), which set the base for this project.
+mkauth's functionality is derived from [`authchanger`](https://github.com/jamf/authchanger) v2.1.0 ([MIT License](./LICENSE)), which set the base for this project.

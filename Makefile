@@ -1,5 +1,5 @@
-CLI = bengal/bengal
-CLI_SOURCES = bengal/*.swift
+CLI = mkauth/mkauth
+CLI_SOURCES = mkauth/*.swift
 SWIFT = swiftc
 AUTHBUNDLE ?= AuthorizationBundle
 APP_CORE ?=

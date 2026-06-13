@@ -1,6 +1,6 @@
 /*
     Preferences.swift
-    bengal
+    mkauth
 
     Copyright © 2026 naomisphere
     Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
@@ -17,13 +17,9 @@ class Preferences {
     static let kDefaultsMech = "defaultMechs"
     static let kDefaultMechs1014And15 = "defaultMechs10-14And10-15"
     static let kDefaultMechs1013 = "defaultMechs10-13"
-    let Bengal = [
+    let Apply = [
         "impactedEntries": ["system.login.console"],
-        "frontMechs": [
-            "BengalLogin:UI",
-            "BengalLogin:PowerControl,privileged",
-            "BengalLogin:CreateUser,privileged"
-        ],
+        "frontMechs": [],
         "endMechs": [],
         "notifyMech": []
     ]
@@ -37,22 +33,23 @@ class Preferences {
     
     func show_main_help() {
         let help = """
-        bengal v\(self.version)
+        mkauth v\(self.version)
         based on authchanger v2.1.0
 
-        bengal is a utility to help you manage the authorization database used by macOS to determine how the login process progresses.
+        mkauth is a utility to help you manage the authorization database used by macOS to determine how the login process progresses.
         Some commands must be run as root.
         
         Usage:
-            bengal <command> [options]
-            bengal help <command>
-            bengal <command> --help
+            mkauth <command> [options]
+            mkauth help <command>
+            mkauth <command> --help
 
         Commands:
             help                  show this help message
             --version             print version
-            --reset               reset login screen to default
-            --apply               apply bengal login UI
+            --reset               reset authdb to default
+            --apply               apply a custom login mechanism
+            --create-privileged   add auxiliary privileged mechanisms
             --print               print current authorization mechanisms
             --debug               dry run of changes showing what would've happened
             --customrule          manage custom authorization rules
@@ -69,9 +66,9 @@ class Preferences {
         switch cmd {
         case "reset":
             print("""
-            bengal --reset
+            mkauth --reset
             
-            Usage: bengal --reset [--debug]
+            Usage: mkauth --reset [--debug]
             
             Reset authdb to default.
             
@@ -79,108 +76,111 @@ class Preferences {
                 --debug    Dry run without making changes
             
             Examples:
-                bengal --reset
-                bengal --reset --debug
+                mkauth --reset
+                mkauth --reset --debug
             """)
             
-        case "apply", "bengal":
+        case "apply":
             print("""
-            bengal --apply
+            mkauth --apply [mechanism]
             
-            Usage: bengal --apply [--debug] [--prelogin <mechs>] [--preauth <mechs>] [--postauth <mechs>]
+            Usage: mkauth --apply [<mechanism>] [--debug] [--prelogin <mechs>] [--preauth <mechs>] [--postauth <mechs>] [--create-privileged]
             
-            Apply Bengal login UI.
+            Apply given login mechanism
             
             Options:
                 --debug              Dry run without making changes
+                --create-privileged  Add auxiliary privileged mechanisms for login
                 --prelogin <mechs>   Mechanisms before UI is shown
                 --preauth <mechs>    Mechanisms between UI and authentication
                 --postauth <mechs>   Mechanisms after authentication
             
             Examples:
-                bengal --apply
-                bengal --apply --prelogin CustomMechanism:Something
+                mkauth --apply
+                mkauth --apply "customlogin:login"
+                mkauth --apply "customlogin:login" --create-privileged
+                mkauth --apply "customlogin:login" --prelogin CustomMechanism:Something
             """)
             
         case "print":
             print("""
-            bengal --print
+            mkauth --print
             
-            Usage: bengal --print
+            Usage: mkauth --print
             
             Prints the current authorization mechanisms for system.login.console
             
             Example:
-                bengal --print
+                mkauth --print
             """)
             
         case "debug":
             print("""
-            bengal --debug
+            mkauth --debug
             
-            Usage: bengal --debug <command>
+            Usage: mkauth --debug <command>
             
             Performs a dry run of the specified command without making changes.
             
             Examples:
-                bengal --debug --reset
-                bengal --debug --apply --prelogin CustomMechanism:Something
+                mkauth --debug --reset
+                mkauth --debug --apply --prelogin CustomMechanism:Something
             """)
             
         case "customrule":
             print("""
-            bengal --customrule
+            mkauth --customrule
             
             Usage:
-                bengal --customrule <rule> print
-                bengal --customrule <rule> mechanisms <mechs...> [--debug]
-                bengal --customrule <rule> rules <rule-name> [--debug]
+                mkauth --customrule <rule> print
+                mkauth --customrule <rule> mechanisms <mechs...> [--debug]
+                mkauth --customrule <rule> rules <rule-name> [--debug]
             
             Manages custom authorization rules.
             """)
             
         case "prelogin":
             print("""
-            bengal --prelogin
+            mkauth --prelogin
             
-            Usage: bengal --prelogin <mechanisms...> [--debug]
+            Usage: mkauth --prelogin <mechanisms...> [--debug]
             
             Sets mechanisms to be used before the UI is shown.
             
             Examples:
-                bengal --prelogin CustomMechanism:Something
-                bengal --prelogin "CustomAuth:Check" --debug
+                mkauth --prelogin CustomMechanism:Something
+                mkauth --prelogin "CustomAuth:Check" --debug
             """)
             
         case "preauth":
             print("""
-            bengal --preauth
+            mkauth --preauth
             
-            Usage: bengal --preauth <mechanisms...> [--debug]
+            Usage: mkauth --preauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used between login UI and authentication.
             
             Examples:
-                bengal --preauth CustomAuth:Check
-                bengal --preauth "CustomAuth:Check" --debug
+                mkauth --preauth CustomAuth:Check
+                mkauth --preauth "CustomAuth:Check" --debug
             """)
             
         case "postauth":
             print("""
-            bengal --postauth
+            mkauth --postauth
             
-            Usage: bengal --postauth <mechanisms...> [--debug]
+            Usage: mkauth --postauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used after authentication.
             
             Examples:
-                bengal --postauth PostLogin:Setup
-                bengal --postauth "PostLogin:Setup" --debug
+                mkauth --postauth PostLogin:Setup
+                mkauth --postauth "PostLogin:Setup" --debug
             """)
             
         default:
             print("Unknown command: \(command)\n")
-            print("Run 'bengal help' for help")
+            print("Run 'mkauth help' for help")
         }
     }
 }

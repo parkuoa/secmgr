@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BINARY=/tmp/BengalLoginUI_Test
+BINARY=/tmp/UIAuthBundleTest
 #BASEDIR="${0:a:h}"
 BASEDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 RESOURCES_DIR="$(dirname "$BINARY")/Resources"

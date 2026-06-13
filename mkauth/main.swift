@@ -1,6 +1,6 @@
 /*
     main.swift
-    bengal
+    mkauth
   
     Copyright © 2026 naomisphere
     Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
@@ -26,15 +26,23 @@ func hasArg(_ arg: String) -> Bool {
     stdArgs.contains(arg.uppercased())
 }
 
+func argValue(_ arg: String) -> String? {
+    let argArray = args.map { $0.uppercased() }
+    guard let index = argArray.firstIndex(of: arg.uppercased()), index + 1 < args.count else {
+        return nil
+    }
+    return args[index + 1]
+}
+
 // noarg / help / --help
 let help_wanted = args.count == 1 || stdArgs.contains("HELP") || stdArgs.contains("--HELP")
 
 if help_wanted {
-    // check for "bengal help [cmd]"
+    // check for "mkauth help [cmd]"
     if args.count >= 3 && args[1].lowercased() == "help" {
         preferences.show_command_help(args[2])
     }
-    // "bengal [cmd] --help" or "bengal [cmd] help"
+    // "mkauth [cmd] --help" or "mkauth [cmd] help"
     else if args.count >= 3 && (stdArgs.contains("--HELP") || stdArgs.contains("HELP")) {
         preferences.show_command_help(args[1])
     }
@@ -72,18 +80,22 @@ func getImpactedEntries(arguments: [String]) -> [String]{
              "--PRELOGIN",
              "--PREAUTH",
              "--POSTAUTH":
-            for domain in preferences.Bengal["impactedEntries"] as! [String]{
+            let domains = preferences.Apply["impactedEntries"] ?? []
+            for domain in domains {
                 impactedEntries.appendIfNotContains(domain)
             }
         case "--RESET",
              "--PRINT":
-            for domain in preferences.Bengal["impactedEntries"] as! [String]{
+            let domains = preferences.Reset["impactedEntries"] ?? []
+            for domain in domains {
                 impactedEntries.appendIfNotContains(domain)
             }
         case "--CUSTOMRULE":
             let argArrayCap = (CommandLine.arguments).map{$0.uppercased()}
             let argIndex = argArrayCap.firstIndex(of: "--CUSTOMRULE")
-            impactedEntries.appendIfNotContains((CommandLine.arguments)[argIndex! + 1])
+            if let argIndex = argIndex, argIndex + 1 < CommandLine.arguments.count {
+                impactedEntries.appendIfNotContains((CommandLine.arguments)[argIndex + 1])
+            }
         default:
             break
         }
@@ -91,9 +103,59 @@ func getImpactedEntries(arguments: [String]) -> [String]{
     return impactedEntries
 }
 
-// default mechanism addition function to avoid the code replication in the initial version
+/* we need to keep track of the mechs we add so we can safely and easily
+manage them later */
 
-// default mechanism addition function to avoid the code replication in the initial version
+// this variable stores the metadata prefix for our custom mechs
+private let customMechPrefix = "external:"
+
+func extMechIDComment(_ line: String) -> Bool {
+    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.hasPrefix(customMechPrefix) {
+        return true
+    }
+    let segments = trimmed.split(separator: "|")
+    guard segments.count >= 2 else {
+        return false
+    }
+    return segments.allSatisfy { segment in
+        let part = segment.trimmingCharacters(in: .whitespacesAndNewlines)
+        return part.contains(":") && !part.contains(" ")
+    }
+}
+
+func parseManagedMechanisms(from comment: String?) -> [String] {
+    guard let comment = comment else { return [] }
+    for line in comment.split(separator: "\n") {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        if extMechIDComment(trimmed) {
+            let payload: Substring
+            if trimmed.hasPrefix(customMechPrefix) {
+                payload = trimmed.dropFirst(customMechPrefix.count)
+            } else {
+                payload = trimmed[trimmed.startIndex...]
+            }
+            return payload.split(separator: "|").map(String.init)
+        }
+    }
+    return []
+}
+
+/* append ourselves as a comment */
+func AddCustomIdentifier(existingComment: String?, managedMechs: [String]) -> String {
+    let preservedLines = (existingComment ?? "").split(separator: "\n", omittingEmptySubsequences: false).map(String.init).filter { line in
+        !extMechIDComment(line)
+    }
+    let baseComment = preservedLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !managedMechs.isEmpty else {
+        return baseComment
+    }
+    let metadataLine = customMechPrefix + managedMechs.joined(separator: "|")
+    if baseComment.isEmpty {
+        return metadataLine
+    }
+    return baseComment + "\n" + metadataLine
+}
 
 func defaultMechanismAddition(editingConfiguration: [String: [String: AnyObject]], mechDict: [String: [String]], notify: Bool = false) -> [String: [String: AnyObject]] {
         
@@ -101,7 +163,7 @@ func defaultMechanismAddition(editingConfiguration: [String: [String: AnyObject]
     
     for impactedMech in (mechDict["impactedEntries"]! as [String]) {
         
-        var tmpEditingConfigurationMech = editingConfiguration[impactedMech]
+        let tmpEditingConfigurationMech = editingConfiguration[impactedMech]
         var editingMech = tmpEditingConfigurationMech?["mechanisms"] as! [String]
         
         var increment = 1
@@ -109,9 +171,15 @@ func defaultMechanismAddition(editingConfiguration: [String: [String: AnyObject]
             increment = 2
         }
         
-        // Remove existing Bengal mechanisms and the default login window to ensure fresh placement and replacement
-        let mechsToRemove = ["BengalLogin:UI", "BengalLogin:PowerControl,privileged", "BengalLogin:CreateUser,privileged", "loginwindow:login"]
-        editingMech.removeAll { mech in mechsToRemove.contains(mech) }
+        /* now manage and get rid of our custom mechs */
+        let previousManaged = parseManagedMechanisms(from: tmpEditingConfigurationMech?["comment"] as? String)
+        
+        editingMech.removeAll { mech in
+            if mech == "loginwindow:login" {
+                return true
+            }
+            return previousManaged.contains(mech)
+        }
         
         // adding the front mechanisms in the preferred order
         // preferred: UI -> PowerControl -> CreateUser
@@ -138,9 +206,14 @@ func defaultMechanismAddition(editingConfiguration: [String: [String: AnyObject]
             }
         }
         
-        // rebuilding the edited master authdb
-        tmpEditingConfigurationMech?["mechanisms"] = editingMech as AnyObject
-        tmpEditingConfiguration[impactedMech] = tmpEditingConfigurationMech
+        // rebuild the edited master authdb
+        if var updatedEntry = tmpEditingConfigurationMech {
+            updatedEntry["mechanisms"] = editingMech as AnyObject
+            updatedEntry["comment"] = AddCustomIdentifier(existingComment: updatedEntry["comment"] as? String, managedMechs: frontMechs) as AnyObject
+            tmpEditingConfiguration[impactedMech] = updatedEntry
+        } else {
+            tmpEditingConfiguration[impactedMech] = tmpEditingConfigurationMech
+        }
     }
     return tmpEditingConfiguration
 }
@@ -158,6 +231,16 @@ func authorizationDBPrettyPrint(authDBConfiguration: [String: [String: AnyObject
                 for mechName in entryMechs as! [String]{
                     print("      \(mechName)")
                 }
+            } else if EntryPropertyKey == "comment", let comment = entryProperty?[EntryPropertyKey] as? String {
+                let commentLines = comment.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+                if let first = commentLines.first {
+                    print("   comment : \(first)")
+                } else {
+                    print("   comment :")
+                }
+                for line in commentLines.dropFirst() {
+                    print("   \(line)")
+                }
             } else {
                 print("   " + EntryPropertyKey + " : \(entryProperty![EntryPropertyKey]!)")
             }
@@ -173,18 +256,35 @@ let currentConfiguration = authdb.getBatch(getArray: getImpactedEntries(argument
 var editingConfiguration = currentConfiguration as [String: [String: AnyObject]]
 
     if hasArg("--RESET") {
-        var tmpEditingConfigurationMech = editingConfiguration[((preferences.Reset)["impactedEntries"]! as [String])[0]]
-        if #available(macOS 10.16, *) {
-            tmpEditingConfigurationMech?["mechanisms"] = (preferences.Reset)[Preferences.kDefaultsMech] as AnyObject
-        } else {
-            tmpEditingConfigurationMech?["mechanisms"] = (preferences.Reset)[Preferences.kDefaultMechs1014And15] as AnyObject
+        let entryKey = ((preferences.Reset)["impactedEntries"]! as [String])[0]
+        if var updatedEntry = editingConfiguration[entryKey] {
+            if #available(macOS 10.16, *) {
+                updatedEntry["mechanisms"] = (preferences.Reset)[Preferences.kDefaultsMech] as AnyObject
+            } else {
+                updatedEntry["mechanisms"] = (preferences.Reset)[Preferences.kDefaultMechs1014And15] as AnyObject
+            }
+            updatedEntry["comment"] = AddCustomIdentifier(existingComment: updatedEntry["comment"] as? String, managedMechs: []) as AnyObject
+            editingConfiguration[entryKey] = updatedEntry
         }
-        
-        editingConfiguration[((preferences.Reset)["impactedEntries"]! as [String])[0]] = tmpEditingConfigurationMech
     }
 
 if hasArg("--APPLY") {
-    editingConfiguration = defaultMechanismAddition(editingConfiguration: editingConfiguration, mechDict: preferences.Bengal, notify: false)
+    let defaultFront = preferences.Apply["frontMechs"] ?? []
+    let applyMechanism = argValue("--APPLY") ?? defaultFront.first
+    guard let applyMechanism = applyMechanism, !applyMechanism.isEmpty else {
+        print("failed: --apply missing mechanism string")
+        exit(1)
+    }
+    var customMechDict = preferences.Apply
+    customMechDict["frontMechs"] = [applyMechanism]
+
+    if hasArg("--CREATE-PRIVILEGED") {
+        /* use same prefix as mech to apply */
+        let prefix = applyMechanism.split(separator: ":").first.map(String.init) ?? applyMechanism
+        customMechDict["frontMechs"]!.append(contentsOf: ["\(prefix):PowerControl,privileged", "\(prefix):CreateUser,privileged"])
+    }
+
+    editingConfiguration = defaultMechanismAddition(editingConfiguration: editingConfiguration, mechDict: customMechDict, notify: false)
 }
 
 // getting all mechanisms from the parameters given in
