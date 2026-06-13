@@ -12,7 +12,7 @@ import Security.AuthorizationDB
 class authorizationdb {
     private func getAuth() -> AuthorizationRef{
         if NSUserName() != "root" {
-            print("Not Running as root, please execute with sudo privilege to do this function")
+            print("You must run this command as root.")
             exit(1)
         }
         var authRef : AuthorizationRef? = nil

@@ -1,10 +1,10 @@
-//
-//  main.swift
-//  bengal
-//
-//  Copyright © 2026 naomisphere
-//  Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
-//
+/*
+    main.swift
+    bengal
+  
+    Copyright © 2026 naomisphere
+    Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
+*/
 
 import Foundation
 import Security.AuthorizationDB
@@ -19,18 +19,23 @@ var err = OSStatus.init(0)
 
 // full arguments list as single string
 let args = CommandLine.arguments
-let argString = CommandLine.arguments.joined(separator: " ").uppercased()
+let stdArgs = args.map { $0.trimmingCharacters(in: .whitespaces).uppercased() }
+let argString = stdArgs.joined(separator: " ")
 
-// noarg / help / -help
-let help_wanted = args.count == 1 || args.contains { $0.lowercased() == "help" } || args.contains { $0.lowercased() == "-help" }
+func hasArg(_ arg: String) -> Bool {
+    stdArgs.contains(arg.uppercased())
+}
+
+// noarg / help / --help
+let help_wanted = args.count == 1 || stdArgs.contains("HELP") || stdArgs.contains("--HELP")
 
 if help_wanted {
     // check for "bengal help [cmd]"
     if args.count >= 3 && args[1].lowercased() == "help" {
         preferences.show_command_help(args[2])
     }
-    // (and for "bengal [cmd] -help")
-    else if args.count >= 3 && (args.contains("-help") || args.contains("help")) {
+    // "bengal [cmd] --help" or "bengal [cmd] help"
+    else if args.count >= 3 && (stdArgs.contains("--HELP") || stdArgs.contains("HELP")) {
         preferences.show_command_help(args[1])
     }
     else {
@@ -63,21 +68,21 @@ func getImpactedEntries(arguments: [String]) -> [String]{
         switch(arg.uppercased()){
             
         // All of these parameters edit the same entry
-        case "-BENGAL",
-             "-PRELOGIN",
-             "-PREAUTH",
-             "-POSTAUTH":
+        case "--APPLY",
+             "--PRELOGIN",
+             "--PREAUTH",
+             "--POSTAUTH":
             for domain in preferences.Bengal["impactedEntries"] as! [String]{
                 impactedEntries.appendIfNotContains(domain)
             }
-        case "-RESET",
-             "-PRINT":
+        case "--RESET",
+             "--PRINT":
             for domain in preferences.Bengal["impactedEntries"] as! [String]{
                 impactedEntries.appendIfNotContains(domain)
             }
-        case "-CUSTOMRULE":
+        case "--CUSTOMRULE":
             let argArrayCap = (CommandLine.arguments).map{$0.uppercased()}
-            let argIndex = argArrayCap.firstIndex(of: "-CUSTOMRULE")
+            let argIndex = argArrayCap.firstIndex(of: "--CUSTOMRULE")
             impactedEntries.appendIfNotContains((CommandLine.arguments)[argIndex! + 1])
         default:
             break
@@ -167,7 +172,7 @@ let currentConfiguration = authdb.getBatch(getArray: getImpactedEntries(argument
 // Making a copy of the configuraiton to edit
 var editingConfiguration = currentConfiguration as [String: [String: AnyObject]]
 
-    if argString.contains("-RESET") {
+    if hasArg("--RESET") {
         var tmpEditingConfigurationMech = editingConfiguration[((preferences.Reset)["impactedEntries"]! as [String])[0]]
         if #available(macOS 10.16, *) {
             tmpEditingConfigurationMech?["mechanisms"] = (preferences.Reset)[Preferences.kDefaultsMech] as AnyObject
@@ -178,18 +183,18 @@ var editingConfiguration = currentConfiguration as [String: [String: AnyObject]]
         editingConfiguration[((preferences.Reset)["impactedEntries"]! as [String])[0]] = tmpEditingConfigurationMech
     }
 
-if argString.contains("-BENGAL") {
+if hasArg("--APPLY") {
     editingConfiguration = defaultMechanismAddition(editingConfiguration: editingConfiguration, mechDict: preferences.Bengal, notify: false)
 }
 
 // getting all mechanisms from the parameters given in
 // this code is dirty..... -Johan
 var preLoginMechs:[String] = [], preAuthMechs:[String] = [], postAuthMechs:[String] = [], customRuleMechs:[String] = []
-if argString.contains("-PRELOGIN") || argString.contains("-PREAUTH") || argString.contains("-POSTAUTH") || argString.contains("-CUSTOMRULE"){
+if hasArg("--PRELOGIN") || hasArg("--PREAUTH") || hasArg("--POSTAUTH") || hasArg("--CUSTOMRULE") {
     let argArrayCap = (CommandLine.arguments).map{$0.uppercased()}
     var i = 1
     while i < argArrayCap.count {
-        if argArrayCap[i] == "-PRELOGIN" {
+        if argArrayCap[i] == "--PRELOGIN" {
             i += 1
             if i >= argArrayCap.count{break}
             while !(argArrayCap[i]).hasPrefix("-"){
@@ -199,7 +204,7 @@ if argString.contains("-PRELOGIN") || argString.contains("-PREAUTH") || argStrin
             }
             i -= 1
         }
-        if argArrayCap[i] == "-PREAUTH" {
+        if argArrayCap[i] == "--PREAUTH" {
             i += 1
             if i >= argArrayCap.count{break}
             while !(argArrayCap[i]).hasPrefix("-"){
@@ -209,7 +214,7 @@ if argString.contains("-PRELOGIN") || argString.contains("-PREAUTH") || argStrin
             }
             i -= 1
         }
-        if argArrayCap[i] == "-POSTAUTH" {
+        if argArrayCap[i] == "--POSTAUTH" {
             i += 1
             if i >= argArrayCap.count{break}
             while !(argArrayCap[i]).hasPrefix("-"){
@@ -219,7 +224,7 @@ if argString.contains("-PRELOGIN") || argString.contains("-PREAUTH") || argStrin
             }
             i -= 1
         }
-        if argArrayCap[i] == "-CUSTOMRULE" {
+        if argArrayCap[i] == "--CUSTOMRULE" {
             i += 1
             if i >= argArrayCap.count{break}
             while !(argArrayCap[i]).hasPrefix("-"){
@@ -239,7 +244,7 @@ preAuthMechs.reverse()
 postAuthMechs.reverse()
 
 
-if argString.contains("-PRELOGIN") {
+if hasArg("--PRELOGIN") {
     var tmpEditingConfigurationMech = editingConfiguration["system.login.console"]
     var editingMech = tmpEditingConfigurationMech?["mechanisms"] as! [String]
     for mech in preLoginMechs {
@@ -249,7 +254,7 @@ if argString.contains("-PRELOGIN") {
     editingConfiguration["system.login.console"] = tmpEditingConfigurationMech
 }
 
-if argString.contains("-PREAUTH") {
+if hasArg("--PREAUTH") {
     var tmpEditingConfigurationMech = editingConfiguration["system.login.console"]
     var editingMech = tmpEditingConfigurationMech?["mechanisms"] as! [String]
     let additionIndex = editingMech.firstIndex(of: "builtin:login-begin")!
@@ -260,7 +265,7 @@ if argString.contains("-PREAUTH") {
     editingConfiguration["system.login.console"] = tmpEditingConfigurationMech
 }
 
-if argString.contains("-POSTAUTH") {
+if hasArg("--POSTAUTH") {
     var tmpEditingConfigurationMech = editingConfiguration["system.login.console"]
     var editingMech = tmpEditingConfigurationMech?["mechanisms"] as! [String]
     let additionIndex = editingMech.count
@@ -271,15 +276,15 @@ if argString.contains("-POSTAUTH") {
     editingConfiguration["system.login.console"] = tmpEditingConfigurationMech
 }
 
-if argString.contains("-CUSTOMRULE") {
+if hasArg("--CUSTOMRULE") {
     
     let customRuleName = customRuleMechs.remove(at: 0)
     var tmpEditingConfigurationMech = editingConfiguration[customRuleName]
     
-    if argString.contains("-PRINT"){
+    if hasArg("--PRINT") {
         authorizationDBPrettyPrint(authDBConfiguration: [customRuleName: (currentConfiguration[customRuleName] ?? nil)!])
         exit(0)
-    } else if !argString.contains("-DEBUG"){
+    } else if !hasArg("--DEBUG") {
         print("Previous Rule for reference:\n")
         authorizationDBPrettyPrint(authDBConfiguration: currentConfiguration)
     }
@@ -306,12 +311,12 @@ if argString.contains("-CUSTOMRULE") {
 
 
 // print version and quit if asked
-if argString.contains("-PRINT") {
+if hasArg("--PRINT") {
     authorizationDBPrettyPrint(authDBConfiguration: currentConfiguration)
     exit(0)
 }
 
-if argString.contains("-DEBUG") {
+if hasArg("--DEBUG") {
     authorizationDBPrettyPrint(authDBConfiguration: editingConfiguration)
     exit(0)
 } else {

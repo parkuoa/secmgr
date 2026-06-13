@@ -1,10 +1,10 @@
-//
-//  main.swift
-//  bengal
-//
-//  Copyright © 2026 naomisphere
-//  Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
-//
+/*
+    Preferences.swift
+    bengal
+
+    Copyright © 2026 naomisphere
+    Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
+*/
 
 import Foundation
 
@@ -46,20 +46,19 @@ class Preferences {
         Usage:
             bengal <command> [options]
             bengal help <command>
-            bengal <command> -help
-        
+            bengal <command> --help
+
         Commands:
-            version               print version
             help                  show this help message
-            -reset                reset login screen to default
-            -bengal               apply bengal login UI
-            -print                print current authorization mechanisms
-            -debug                dry run of changes showing what would've happened
-            -customrule           manage custom authorization rules
-            -prelogin             set pre-login mechanisms
-            -preauth              set pre-authentication mechanisms
-            -postauth             set post-authentication mechanisms
-        
+            --version             print version
+            --reset               reset login screen to default
+            --apply               apply bengal login UI
+            --print               print current authorization mechanisms
+            --debug               dry run of changes showing what would've happened
+            --customrule          manage custom authorization rules
+            --prelogin            set pre-login mechanisms
+            --preauth             set pre-authentication mechanisms
+            --postauth            set post-authentication mechanisms
         """
         print(help)
     }
@@ -70,113 +69,113 @@ class Preferences {
         switch cmd {
         case "reset":
             print("""
-            bengal -reset
+            bengal --reset
             
-            Usage: bengal -reset [-debug]
+            Usage: bengal --reset [--debug]
             
-            Resets the login screen to factory settings.
+            Reset authdb to default.
             
             Options:
-                -debug    Dry run without making changes
+                --debug    Dry run without making changes
             
             Examples:
-                bengal -reset
-                bengal -reset -debug
+                bengal --reset
+                bengal --reset --debug
             """)
             
-        case "bengal":
+        case "apply", "bengal":
             print("""
-            bengal -bengal
+            bengal --apply
             
-            Usage: bengal -bengal [-debug] [-preLogin <mechs>] [-preAuth <mechs>] [-postAuth <mechs>]
+            Usage: bengal --apply [--debug] [--prelogin <mechs>] [--preauth <mechs>] [--postauth <mechs>]
             
             Apply Bengal login UI.
             
             Options:
-                -debug              Dry run without making changes
-                -preLogin <mechs>   Mechanisms before UI is shown
-                -preAuth <mechs>    Mechanisms between UI and authentication
-                -postAuth <mechs>   Mechanisms after authentication
+                --debug              Dry run without making changes
+                --prelogin <mechs>   Mechanisms before UI is shown
+                --preauth <mechs>    Mechanisms between UI and authentication
+                --postauth <mechs>   Mechanisms after authentication
             
             Examples:
-                bengal -bengal
-                bengal -bengal -preLogin CustomMechanism:Something
+                bengal --apply
+                bengal --apply --prelogin CustomMechanism:Something
             """)
             
         case "print":
             print("""
-            bengal -print
+            bengal --print
             
-            Usage: bengal -print
+            Usage: bengal --print
             
             Prints the current authorization mechanisms for system.login.console
             
             Example:
-                bengal -print
+                bengal --print
             """)
             
         case "debug":
             print("""
-            bengal -debug
+            bengal --debug
             
-            Usage: bengal -debug <command>
+            Usage: bengal --debug <command>
             
             Performs a dry run of the specified command without making changes.
             
             Examples:
-                bengal -debug -reset
-                bengal -debug -bengal -preLogin CustomMechanism:Something
+                bengal --debug --reset
+                bengal --debug --apply --prelogin CustomMechanism:Something
             """)
             
         case "customrule":
             print("""
-            bengal customrule
+            bengal --customrule
             
             Usage:
-                bengal -customrule <rule> print
-                bengal -customrule <rule> mechanisms <mechs...> [-debug]
-                bengal -customrule <rule> rules <rule-name> [-debug]
+                bengal --customrule <rule> print
+                bengal --customrule <rule> mechanisms <mechs...> [--debug]
+                bengal --customrule <rule> rules <rule-name> [--debug]
             
             Manages custom authorization rules.
             """)
             
         case "prelogin":
             print("""
-            bengal -prelogin
+            bengal --prelogin
             
-            Usage: bengal -prelogin <mechanisms...> [-debug]
+            Usage: bengal --prelogin <mechanisms...> [--debug]
             
             Sets mechanisms to be used before the UI is shown.
             
             Examples:
-                bengal -prelogin CustomMechanism:Something
-                bengal -prelogin "CustomAuth:Check" -debug
+                bengal --prelogin CustomMechanism:Something
+                bengal --prelogin "CustomAuth:Check" --debug
             """)
             
         case "preauth":
             print("""
-            bengal -preauth
+            bengal --preauth
             
-            Usage: bengal -preauth <mechanisms...> [-debug]
+            Usage: bengal --preauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used between login UI and authentication.
             
             Examples:
-                bengal -preauth CustomAuth:Check
-                bengal -preauth "CustomAuth:Check" -debug
+                bengal --preauth CustomAuth:Check
+                bengal --preauth "CustomAuth:Check" --debug
             """)
             
         case "postauth":
             print("""
-            bengal -postauth
+            bengal --postauth
             
-            Usage: bengal -postauth <mechanisms...> [-debug]
+            Usage: bengal --postauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used after authentication.
             
             Examples:
-                bengal -postauth PostLogin:Setup
-                bengal -postauth "PostLogin:Setup" -debug
+                bengal --postauth PostLogin:Setup
+                bengal --postauth "PostLogin:Setup" --debug
             """)
             
         default:

@@ -4,7 +4,7 @@ SWIFT = swiftc
 AUTHBUNDLE ?= AuthorizationBundle
 APP_CORE ?=
 
-.PHONY: all clean cli authbundle help
+.PHONY: all clean cli authbundle help install
 
 all: $(CLI)
 
@@ -36,6 +36,9 @@ validate-authbundle:
 
 clean:
 	rm -f $(CLI)
+
+install:
+	sudo cp $(CLI) /usr/local/bin
 
 help:
 	@echo ""
