@@ -1,5 +1,5 @@
-# mkauth
-**mkauth** is a command-line utility for tinkering with macOS's system authorization database. It allows you to modify the `system.login.console` right and its mechanisms (plugins, MFA, or directory services) that execute during the login process.
+# secmgr
+**secmgr** is a command-line utility for tinkering with macOS's system authorization database. It allows you to modify the `system.login.console` right and its mechanisms (plugins, MFA, or directory services) that execute during the login process.
 
  It is intended to be as customizable as possible, letting you customize login behavior and inject your own logic without being locked into specific third-party frameworks or vendor-specific deployment screens.
 
@@ -26,7 +26,7 @@ To build an authorization bundle:
 AUTHBUNDLE=/path/to/AuthorizationBundle make authbundle
 ```
 
-If the bundle uses mkauth's app settings, provide that path with `APP_CORE`:
+If the bundle uses secmgr's app settings, provide that path with `APP_CORE`:
 
 ```bash
 AUTHBUNDLE=/path/to/AuthorizationBundle APP_CORE=/path/to/app_core make authbundle
@@ -44,14 +44,14 @@ If using `APP_CORE`, that path must mandatorily contain:
 ## CLI Guide
 
 Some commands require `sudo` as you're working with system databases here. \
-You may always use ```mkauth help``` for help.
+You may always use ```secmgr help``` for help.
 
 ### Basics
-* `mkauth --print`: show current mechanisms for `system.login.console`.
-* `mkauth --reset`: revert the login screen to default.
-* `mkauth --apply`: apply the login mechanism configured by your authbundle.
-* `mkauth --create-privileged`: use alongside ``--apply`` to give mechanism has elevated privileges.
-* `mkauth --version`: print version.
+* `secmgr --print`: show current mechanisms for `system.login.console`.
+* `secmgr --reset`: revert the login screen to default.
+* `secmgr --apply`: apply the login mechanism configured by your authbundle.
+* `secmgr --create-privileged`: use alongside ``--apply`` to give mechanism has elevated privileges.
+* `secmgr --version`: print version.
 
 ### Customizing the Flow
 You can stack mechanisms at specific stages of the authentication chain:
@@ -61,12 +61,12 @@ You can stack mechanisms at specific stages of the authentication chain:
 
 **Examples:**
 ```bash
-sudo mkauth --apply "myLoginMech:login"
+sudo secmgr --apply "myLoginMech:login"
 ```
 ^ ``apply`` login mechanism. The authorization bundle will have to pick up on it (see submod examples/AuthorizationBundle/core/Mechanism.swift)
 
 ```bash
-sudo mkauth --apply "mkauth:ui" --create-privileged --prelogin CustomMech:Something --postauth PostLogin:Setup
+sudo secmgr --apply "secmgr:ui" --create-privileged --prelogin CustomMech:Something --postauth PostLogin:Setup
 ```
 translates to:
 ```
@@ -76,9 +76,9 @@ Entry: system.login.console
       builtin:policy-banner
       CustomMech:Something <-- custom prelogin mechanism
       builtin:prelogin
-      mkauth:ui <-- custom login mech (replacing loginwindow:login)
-      mkauth:PowerControl,privileged <-- our privileged rights
-      mkauth:CreateUser,privileged
+      secmgr:ui <-- custom login mech (replacing loginwindow:login)
+      secmgr:PowerControl,privileged <-- our privileged rights
+      secmgr:CreateUser,privileged
       builtin:login-begin
       builtin:reset-password,privileged
       loginwindow:FDESupport,privileged
@@ -95,11 +95,11 @@ Entry: system.login.console
       loginwindow:done
       PostLogin:Setup <-- post-auth mechanism
    comment : Login mechanism based rule.  Not for general use, yet.
-   external:mkauth:ui|mkauth:PowerControl,privileged|mkauth:CreateUser,privileged
+   external:secmgr:ui|secmgr:PowerControl,privileged|secmgr:CreateUser,privileged
    version : 11
    shared : 1
    class : evaluate-mechanisms
 ```
 
 ## Acknowledgements
-mkauth's functionality is derived from [`authchanger`](https://github.com/jamf/authchanger) v2.1.0 ([MIT License](./LICENSE)), which set the base for this project.
+secmgr's functionality is derived from [`authchanger`](https://github.com/jamf/authchanger) v2.1.0 ([MIT License](./LICENSE)), which set the base for this project.

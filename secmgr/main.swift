@@ -1,6 +1,6 @@
 /*
     main.swift
-    mkauth
+    secmgr
   
     Copyright © 2026 parkuoa
     Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
@@ -38,11 +38,11 @@ func argValue(_ arg: String) -> String? {
 let help_wanted = args.count == 1 || stdArgs.contains("HELP") || stdArgs.contains("--HELP")
 
 if help_wanted {
-    // check for "mkauth help [cmd]"
+    // check for "secmgr help [cmd]"
     if args.count >= 3 && args[1].lowercased() == "help" {
         preferences.show_command_help(args[2])
     }
-    // "mkauth [cmd] --help" or "mkauth [cmd] help"
+    // "secmgr [cmd] --help" or "secmgr [cmd] help"
     else if args.count >= 3 && (stdArgs.contains("--HELP") || stdArgs.contains("HELP")) {
         preferences.show_command_help(args[1])
     }

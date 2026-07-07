@@ -1,6 +1,6 @@
 /*
     Preferences.swift
-    mkauth
+    secmgr
 
     Copyright © 2026 parkuoa
     Derived from authchanger 2.1.0 (Copyright © 2017 Joel Rennich).
@@ -33,15 +33,15 @@ class Preferences {
     
     func show_main_help() {
         let help = """
-        mkauth v\(self.version)
+        secmgr v\(self.version)
         based on authchanger v2.1.0
 
-        mkauth is a utility to help you manage the authorization database used by macOS to determine how the login process progresses.
+        secmgr is a utility to help you manage the authorization database used by macOS to determine how the login process progresses.
         
         Usage:
-            mkauth <command> [options]
-            mkauth help <command>
-            mkauth <command> --help
+            secmgr <command> [options]
+            secmgr help <command>
+            secmgr <command> --help
 
         Commands:
             help                  show this help message
@@ -67,9 +67,9 @@ class Preferences {
         switch cmd {
         case "reset":
             print("""
-            mkauth --reset
+            secmgr --reset
             
-            Usage: mkauth --reset [--debug]
+            Usage: secmgr --reset [--debug]
             
             Reset authdb to default.
             
@@ -77,15 +77,15 @@ class Preferences {
                 --debug    Dry run without making changes
             
             Examples:
-                mkauth --reset
-                mkauth --reset --debug
+                secmgr --reset
+                secmgr --reset --debug
             """)
             
         case "apply":
             print("""
-            mkauth --apply [mechanism]
+            secmgr --apply [mechanism]
             
-            Usage: mkauth --apply [<mechanism>] [--debug] [--prelogin <mechs>] [--preauth <mechs>] [--postauth <mechs>] [--create-privileged]
+            Usage: secmgr --apply [<mechanism>] [--debug] [--prelogin <mechs>] [--preauth <mechs>] [--postauth <mechs>] [--create-privileged]
             
             Apply given login mechanism
             
@@ -97,91 +97,91 @@ class Preferences {
                 --postauth <mechs>   Mechanisms after authentication
             
             Examples:
-                mkauth --apply
-                mkauth --apply "customlogin:login"
-                mkauth --apply "customlogin:login" --create-privileged
-                mkauth --apply "customlogin:login" --prelogin CustomMechanism:Something
+                secmgr --apply
+                secmgr --apply "customlogin:login"
+                secmgr --apply "customlogin:login" --create-privileged
+                secmgr --apply "customlogin:login" --prelogin CustomMechanism:Something
             """)
             
         case "print":
             print("""
-            mkauth --print
+            secmgr --print
             
-            Usage: mkauth --print
+            Usage: secmgr --print
             
             Prints the current authorization mechanisms for system.login.console
             
             Example:
-                mkauth --print
+                secmgr --print
             """)
             
         case "debug":
             print("""
-            mkauth --debug
+            secmgr --debug
             
-            Usage: mkauth --debug <command>
+            Usage: secmgr --debug <command>
             
             Performs a dry run of the specified command without making changes.
             
             Examples:
-                mkauth --debug --reset
-                mkauth --debug --apply --prelogin CustomMechanism:Something
+                secmgr --debug --reset
+                secmgr --debug --apply --prelogin CustomMechanism:Something
             """)
             
         case "customrule":
             print("""
-            mkauth --customrule
+            secmgr --customrule
             
             Usage:
-                mkauth --customrule <rule> print
-                mkauth --customrule <rule> mechanisms <mechs...> [--debug]
-                mkauth --customrule <rule> rules <rule-name> [--debug]
+                secmgr --customrule <rule> print
+                secmgr --customrule <rule> mechanisms <mechs...> [--debug]
+                secmgr --customrule <rule> rules <rule-name> [--debug]
             
             Manages custom authorization rules.
             """)
             
         case "prelogin":
             print("""
-            mkauth --prelogin
+            secmgr --prelogin
             
-            Usage: mkauth --prelogin <mechanisms...> [--debug]
+            Usage: secmgr --prelogin <mechanisms...> [--debug]
             
             Sets mechanisms to be used before the UI is shown.
             
             Examples:
-                mkauth --prelogin CustomMechanism:Something
-                mkauth --prelogin "CustomAuth:Check" --debug
+                secmgr --prelogin CustomMechanism:Something
+                secmgr --prelogin "CustomAuth:Check" --debug
             """)
             
         case "preauth":
             print("""
-            mkauth --preauth
+            secmgr --preauth
             
-            Usage: mkauth --preauth <mechanisms...> [--debug]
+            Usage: secmgr --preauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used between login UI and authentication.
             
             Examples:
-                mkauth --preauth CustomAuth:Check
-                mkauth --preauth "CustomAuth:Check" --debug
+                secmgr --preauth CustomAuth:Check
+                secmgr --preauth "CustomAuth:Check" --debug
             """)
             
         case "postauth":
             print("""
-            mkauth --postauth
+            secmgr --postauth
             
-            Usage: mkauth --postauth <mechanisms...> [--debug]
+            Usage: secmgr --postauth <mechanisms...> [--debug]
             
             Sets mechanisms to be used after authentication.
             
             Examples:
-                mkauth --postauth PostLogin:Setup
-                mkauth --postauth "PostLogin:Setup" --debug
+                secmgr --postauth PostLogin:Setup
+                secmgr --postauth "PostLogin:Setup" --debug
             """)
             
         default:
             print("Unknown command: \(command)\n")
-            print("Run 'mkauth help' for help")
+            print("Run 'secmgr help' for help")
         }
     }
 }

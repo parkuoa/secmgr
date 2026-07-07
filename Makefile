@@ -1,5 +1,5 @@
-CLI = mkauth/mkauth
-CLI_SOURCES = mkauth/*.swift
+CLI = secmgr/secmgr
+CLI_SOURCES = secmgr/*.swift
 SWIFT = swiftc
 AUTHBUNDLE ?= AuthorizationBundle
 APP_CORE ?=
